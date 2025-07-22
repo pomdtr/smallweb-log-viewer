@@ -1,6 +1,6 @@
 import { JsonParseStream } from "jsr:@std/json/parse-stream";
 import { TextLineStream } from "jsr:@std/streams/text-line-stream";
-import type { ConsoleLogEntry, CronLogEntry, HttpLogEntry, LogEntry } from "./types.ts";
+import type { ConsoleLogEntry, CronLogEntry, HttpLogEntry, LogEntry, SshLogEntry } from "./types.ts";
 
 export class LogsService {
     private readonly logFilePath = "data/logs.jsonl";
@@ -93,6 +93,76 @@ export class LogsService {
         }
 
         return apps;
+    }
+
+    async getUsers(logger?: string): Promise<Set<string>> {
+        const users = new Set<string>();
+
+        try {
+            const file = await Deno.open(this.logFilePath, { read: true });
+            const readable = file.readable
+                .pipeThrough(new TextDecoderStream())
+                .pipeThrough(new TextLineStream())
+                .pipeThrough(new JsonParseStream());
+
+            for await (const chunk of readable) {
+                if (typeof chunk === "object" && chunk !== null && "logger" in chunk) {
+                    const logEntry = chunk as LogEntry;
+
+                    // Filter by logger if specified
+                    if (logger && logEntry.logger !== logger) {
+                        continue;
+                    }
+
+                    if (logEntry.logger === "ssh" && "user" in logEntry) {
+                        const sshEntry = logEntry as SshLogEntry;
+                        if (sshEntry.user) {
+                            users.add(sshEntry.user);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error reading log file:", error);
+        }
+
+        return users;
+    }
+
+    async getRemoteAddresses(logger?: string): Promise<Set<string>> {
+        const addresses = new Set<string>();
+
+        try {
+            const file = await Deno.open(this.logFilePath, { read: true });
+            const readable = file.readable
+                .pipeThrough(new TextDecoderStream())
+                .pipeThrough(new TextLineStream())
+                .pipeThrough(new JsonParseStream());
+
+            for await (const chunk of readable) {
+                if (typeof chunk === "object" && chunk !== null && "logger" in chunk) {
+                    const logEntry = chunk as LogEntry;
+
+                    // Filter by logger if specified
+                    if (logger && logEntry.logger !== logger) {
+                        continue;
+                    }
+
+                    if (logEntry.logger === "ssh" && "remote addr" in logEntry) {
+                        const sshEntry = logEntry as SshLogEntry;
+                        if (sshEntry["remote addr"]) {
+                            // Extract just the IP address (without port)
+                            const ip = sshEntry["remote addr"].split(':')[0];
+                            addresses.add(ip);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error reading log file:", error);
+        }
+
+        return addresses;
     }
 
     async getSchedules(logger?: string): Promise<Set<string>> {
@@ -213,6 +283,37 @@ export class LogsService {
                     const httpEntry = logEntry as HttpLogEntry;
                     const expectedStatusCode = parseInt(expectedValue);
                     if (httpEntry.response.status !== expectedStatusCode) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else if (path === 'remote-addr') {
+                // Special handling for SSH remote address filtering (by IP only)
+                if (logEntry.logger === 'ssh' && 'remote addr' in logEntry) {
+                    const sshEntry = logEntry as SshLogEntry;
+                    const remoteAddr = sshEntry['remote addr'];
+                    if (remoteAddr) {
+                        const ip = remoteAddr.split(':')[0]; // Extract IP without port
+                        if (ip !== expectedValue) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else if (path === 'command') {
+                // Special handling for SSH command search (contains)
+                if (logEntry.logger === 'ssh' && 'command' in logEntry) {
+                    const sshEntry = logEntry as SshLogEntry;
+                    if (sshEntry.command && Array.isArray(sshEntry.command)) {
+                        const commandText = sshEntry.command.join(' ').toLowerCase();
+                        if (!commandText.includes(expectedValue.toLowerCase())) {
+                            return false;
+                        }
+                    } else {
                         return false;
                     }
                 } else {

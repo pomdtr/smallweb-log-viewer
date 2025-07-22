@@ -38,4 +38,11 @@ export type CronLogEntry = BaseLogEntry & {
     schedule: string;
 };
 
-export type LogEntry = HttpLogEntry | ConsoleLogEntry | CronLogEntry | BaseLogEntry;
+export type SshLogEntry = BaseLogEntry & {
+    logger: "ssh";
+    user: string;
+    "remote addr": string;
+    command: string[];
+};
+
+export type LogEntry = HttpLogEntry | ConsoleLogEntry | CronLogEntry | SshLogEntry | BaseLogEntry;

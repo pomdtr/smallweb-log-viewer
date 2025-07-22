@@ -53,6 +53,28 @@ app.get("/api/schedules", async (c) => {
     }
 });
 
+// API endpoint to get available users for ssh logger
+app.get("/api/users", async (c) => {
+    const logger = c.req.query("logger");
+    try {
+        const users = await logsService.getUsers(logger);
+        return c.json(Array.from(users));
+    } catch (_error) {
+        return c.json({ error: "Failed to load users" }, 500);
+    }
+});
+
+// API endpoint to get available remote addresses for ssh logger
+app.get("/api/remote-addresses", async (c) => {
+    const logger = c.req.query("logger");
+    try {
+        const addresses = await logsService.getRemoteAddresses(logger);
+        return c.json(Array.from(addresses));
+    } catch (_error) {
+        return c.json({ error: "Failed to load remote addresses" }, 500);
+    }
+});
+
 app.get("/logs", (c) => {
     const logger = c.req.query("logger");
     if (!logger) {

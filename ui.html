@@ -331,6 +331,28 @@
             font-weight: 600;
         }
 
+        .command-badge {
+            display: inline-block;
+            background: #d69e2e;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .user-badge {
+            display: inline-block;
+            background: #9f7aea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
         .stream-stdout {
             background: #48bb78;
         }
@@ -470,6 +492,28 @@
                 </div>
             </div>
 
+            <!-- SSH Logger Filters -->
+            <div id="sshFilters" class="logger-specific-filters" style="display: none;">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="sshUser">User:</label>
+                        <select id="sshUser">
+                            <option value="">All users</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="remoteAddr">Remote IP:</label>
+                        <select id="remoteAddr">
+                            <option value="">All IPs</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="command">Command (contains):</label>
+                        <input type="text" id="command" placeholder="e.g., ls, cat">
+                    </div>
+                </div>
+            </div>
+
             <div class="filter-actions">
                 <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
                 <button class="btn btn-secondary" id="clearFilters">Clear Filters</button>
@@ -530,6 +574,7 @@
                 document.getElementById('httpFilters').style.display = 'none';
                 document.getElementById('consoleFilters').style.display = 'none';
                 document.getElementById('cronFilters').style.display = 'none';
+                document.getElementById('sshFilters').style.display = 'none';
 
                 try {
                     if (logger === 'http') {
@@ -548,6 +593,12 @@
                         await this.loadSchedules(logger);
                         // Restore Cron filters from URL after loading data
                         this.restoreCronFiltersFromUrl();
+                    } else if (logger === 'ssh') {
+                        document.getElementById('sshFilters').style.display = 'block';
+                        await this.loadUsers(logger);
+                        await this.loadRemoteAddresses(logger);
+                        // Restore SSH filters from URL after loading data
+                        this.restoreSshFiltersFromUrl();
                     }
                 } catch (error) {
                     this.showError('Failed to load logger-specific data: ' + error.message);
@@ -594,6 +645,19 @@
 
                 const schedule = urlParams.get('schedule');
                 if (schedule) document.getElementById('schedule').value = schedule;
+            }
+
+            restoreSshFiltersFromUrl() {
+                const urlParams = new URLSearchParams(window.location.search);
+
+                const user = urlParams.get('user');
+                if (user) document.getElementById('sshUser').value = user;
+
+                const remoteAddr = urlParams.get('remote-addr');
+                if (remoteAddr) document.getElementById('remoteAddr').value = remoteAddr;
+
+                const command = urlParams.get('command');
+                if (command) document.getElementById('command').value = command;
             }
 
             async loadHosts(logger) {
@@ -656,6 +720,46 @@
                 }
             }
 
+            async loadUsers(logger) {
+                try {
+                    const response = await fetch(`/api/users?logger=${encodeURIComponent(logger)}`);
+                    const users = await response.json();
+                    const userSelect = document.getElementById('sshUser');
+
+                    // Clear existing options except "All users"
+                    userSelect.innerHTML = '<option value="">All users</option>';
+
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user;
+                        option.textContent = user;
+                        userSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    this.showError('Failed to load users: ' + error.message);
+                }
+            }
+
+            async loadRemoteAddresses(logger) {
+                try {
+                    const response = await fetch(`/api/remote-addresses?logger=${encodeURIComponent(logger)}`);
+                    const addresses = await response.json();
+                    const addrSelect = document.getElementById('remoteAddr');
+
+                    // Clear existing options except "All IPs"
+                    addrSelect.innerHTML = '<option value="">All IPs</option>';
+
+                    addresses.forEach(addr => {
+                        const option = document.createElement('option');
+                        option.value = addr;
+                        option.textContent = addr;
+                        addrSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    this.showError('Failed to load remote addresses: ' + error.message);
+                }
+            }
+
             setupEventListeners() {
                 document.getElementById('logger').addEventListener('change', (e) => {
                     if (e.target.value) {
@@ -665,6 +769,7 @@
                         document.getElementById('httpFilters').style.display = 'none';
                         document.getElementById('consoleFilters').style.display = 'none';
                         document.getElementById('cronFilters').style.display = 'none';
+                        document.getElementById('sshFilters').style.display = 'none';
                         this.currentLogger = '';
                     }
                     this.updateUrlParams();
@@ -681,10 +786,9 @@
                 // Listen for changes on all filter inputs to update URL
                 const filterInputs = [
                     'level', 'messageSearch', 'host', 'method', 'path', 'status',
-                    'ip', 'minLatency', 'consoleApp', 'stream', 'cronApp', 'schedule'
-                ];
-
-                filterInputs.forEach(id => {
+                    'ip', 'minLatency', 'consoleApp', 'stream', 'cronApp', 'schedule',
+                    'sshUser', 'remoteAddr', 'command'
+                ]; filterInputs.forEach(id => {
                     const element = document.getElementById(id);
                     if (element) {
                         element.addEventListener('change', () => this.updateUrlParams());
@@ -769,6 +873,15 @@
 
                     const schedule = document.getElementById('schedule').value;
                     if (schedule) params.set('schedule', schedule);
+                } else if (this.currentLogger === 'ssh') {
+                    const user = document.getElementById('sshUser').value;
+                    if (user) params.set('user', user);
+
+                    const remoteAddr = document.getElementById('remoteAddr').value;
+                    if (remoteAddr) params.set('remote-addr', remoteAddr);
+
+                    const command = document.getElementById('command').value;
+                    if (command) params.set('command', command);
                 }
 
                 // Update browser URL without triggering page reload
@@ -838,6 +951,15 @@
 
                     const schedule = document.getElementById('schedule').value;
                     if (schedule) filters.set('schedule', schedule);
+                } else if (this.currentLogger === 'ssh') {
+                    const user = document.getElementById('sshUser').value;
+                    if (user) filters.set('user', user);
+
+                    const remoteAddr = document.getElementById('remoteAddr').value;
+                    if (remoteAddr) filters.set('remote-addr', remoteAddr);
+
+                    const command = document.getElementById('command').value;
+                    if (command) filters.set('command', command);
                 }
 
                 return filters;
@@ -908,6 +1030,8 @@
                     return this.renderConsoleLogEntry(log, time);
                 } else if (log.logger === 'cron' && log.app) {
                     return this.renderCronLogEntry(log, time);
+                } else if (log.logger === 'ssh' && log.user) {
+                    return this.renderSshLogEntry(log, time);
                 } else {
                     return this.renderGenericLogEntry(log, time);
                 }
@@ -1017,6 +1141,44 @@
                 `;
             }
 
+            renderSshLogEntry(log, time) {
+                const commandText = Array.isArray(log.command) ? log.command.join(' ') : (log.command || '');
+                const remoteAddr = log['remote addr'] || 'unknown';
+                const ip = remoteAddr.split(':')[0]; // Extract IP without port
+
+                return `
+                    <div class="log-entry">
+                        <div class="log-header">
+                            <div>
+                                <span class="user-badge">${log.user}</span>
+                                <span class="command-badge">${commandText}</span>
+                                <span class="log-path">SSH connection from ${ip}</span>
+                            </div>
+                            <div style="color: #718096; font-size: 12px;">${time}</div>
+                        </div>
+                        <div class="log-details">
+                            <div class="log-detail">
+                                <span class="log-detail-label">User:</span> ${log.user}
+                            </div>
+                            <div class="log-detail">
+                                <span class="log-detail-label">Remote Address:</span> ${remoteAddr}
+                            </div>
+                            <div class="log-detail">
+                                <span class="log-detail-label">Command:</span> ${commandText}
+                            </div>
+                            <div class="log-detail">
+                                <span class="log-detail-label">Level:</span> ${log.level}
+                            </div>
+                            ${log.msg ? `
+                                <div class="log-detail" style="grid-column: 1 / -1;">
+                                    <span class="log-detail-label">Message:</span> ${log.msg}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
             renderGenericLogEntry(log, time) {
                 return `
                     <div class="log-entry">
@@ -1069,16 +1231,24 @@
                 document.getElementById('cronApp').value = '';
                 document.getElementById('schedule').value = '';
 
+                // Clear SSH filters
+                document.getElementById('sshUser').value = '';
+                document.getElementById('remoteAddr').value = '';
+                document.getElementById('command').value = '';
+
                 // Hide all logger-specific filters
                 document.getElementById('httpFilters').style.display = 'none';
                 document.getElementById('consoleFilters').style.display = 'none';
                 document.getElementById('cronFilters').style.display = 'none';
+                document.getElementById('sshFilters').style.display = 'none';
 
                 // Clear dropdowns
                 document.getElementById('host').innerHTML = '<option value="">All hosts</option>';
                 document.getElementById('consoleApp').innerHTML = '<option value="">All apps</option>';
                 document.getElementById('cronApp').innerHTML = '<option value="">All apps</option>';
                 document.getElementById('schedule').innerHTML = '<option value="">All schedules</option>';
+                document.getElementById('sshUser').innerHTML = '<option value="">All users</option>';
+                document.getElementById('remoteAddr').innerHTML = '<option value="">All IPs</option>';
 
                 // Reset current logger
                 this.currentLogger = '';
