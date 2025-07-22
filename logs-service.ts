@@ -165,40 +165,6 @@ export class LogsService {
         return addresses;
     }
 
-    async getSchedules(logger?: string): Promise<Set<string>> {
-        const schedules = new Set<string>();
-
-        try {
-            const file = await Deno.open(this.logFilePath, { read: true });
-            const readable = file.readable
-                .pipeThrough(new TextDecoderStream())
-                .pipeThrough(new TextLineStream())
-                .pipeThrough(new JsonParseStream());
-
-            for await (const chunk of readable) {
-                if (typeof chunk === "object" && chunk !== null && "logger" in chunk) {
-                    const logEntry = chunk as LogEntry;
-
-                    // Filter by logger if specified
-                    if (logger && logEntry.logger !== logger) {
-                        continue;
-                    }
-
-                    if (logEntry.logger === "cron" && "schedule" in logEntry) {
-                        const cronEntry = logEntry as CronLogEntry;
-                        if (cronEntry.schedule) {
-                            schedules.add(cronEntry.schedule);
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Error reading log file:", error);
-        }
-
-        return schedules;
-    }
-
     createFilteredStream(logger: string, filters: Map<string, string>): ReadableStream<Uint8Array> {
         const matchesFilters = this.matchesFilters.bind(this);
         return new ReadableStream({

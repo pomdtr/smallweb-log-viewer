@@ -495,12 +495,6 @@
                             <option value="">All apps</option>
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <label for="schedule">Schedule:</label>
-                        <select id="schedule">
-                            <option value="">All schedules</option>
-                        </select>
-                    </div>
                 </div>
             </div>
 
@@ -538,14 +532,16 @@
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div class="logs-count" id="logsCount">0 entries</div>
                     <div class="pagination-controls">
-                        <select id="pageSize" style="padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px;">
+                        <select id="pageSize"
+                            style="padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px;">
                             <option value="25">Show 25</option>
                             <option value="50" selected>Show 50</option>
                             <option value="100">Show 100</option>
                             <option value="200">Show 200</option>
                             <option value="all">Show All</option>
                         </select>
-                        <button id="loadMore" class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px; display: none;">
+                        <button id="loadMore" class="btn btn-secondary"
+                            style="padding: 8px 16px; font-size: 12px; display: none;">
                             Load More
                         </button>
                     </div>
@@ -619,7 +615,6 @@
                     } else if (logger === 'cron') {
                         document.getElementById('cronFilters').style.display = 'block';
                         await this.loadApps(logger, 'cronApp');
-                        await this.loadSchedules(logger);
                         // Restore Cron filters from URL after loading data
                         this.restoreCronFiltersFromUrl();
                     } else if (logger === 'ssh') {
@@ -671,9 +666,6 @@
 
                 const app = urlParams.get('app');
                 if (app) document.getElementById('cronApp').value = app;
-
-                const schedule = urlParams.get('schedule');
-                if (schedule) document.getElementById('schedule').value = schedule;
             }
 
             restoreSshFiltersFromUrl() {
@@ -726,26 +718,6 @@
                     });
                 } catch (error) {
                     this.showError('Failed to load apps: ' + error.message);
-                }
-            }
-
-            async loadSchedules(logger) {
-                try {
-                    const response = await fetch(`/api/schedules?logger=${encodeURIComponent(logger)}`);
-                    const schedules = await response.json();
-                    const scheduleSelect = document.getElementById('schedule');
-
-                    // Clear existing options except "All schedules"
-                    scheduleSelect.innerHTML = '<option value="">All schedules</option>';
-
-                    schedules.forEach(schedule => {
-                        const option = document.createElement('option');
-                        option.value = schedule;
-                        option.textContent = schedule;
-                        scheduleSelect.appendChild(option);
-                    });
-                } catch (error) {
-                    this.showError('Failed to load schedules: ' + error.message);
                 }
             }
 
@@ -827,7 +799,7 @@
                 // Listen for changes on all filter inputs to update URL
                 const filterInputs = [
                     'level', 'messageSearch', 'host', 'method', 'path', 'status',
-                    'ip', 'minLatency', 'consoleApp', 'stream', 'cronApp', 'schedule',
+                    'ip', 'minLatency', 'consoleApp', 'stream', 'cronApp',
                     'sshUser', 'remoteAddr', 'command'
                 ]; filterInputs.forEach(id => {
                     const element = document.getElementById(id);
@@ -911,9 +883,6 @@
                 } else if (this.currentLogger === 'cron') {
                     const app = document.getElementById('cronApp').value;
                     if (app) params.set('app', app);
-
-                    const schedule = document.getElementById('schedule').value;
-                    if (schedule) params.set('schedule', schedule);
                 } else if (this.currentLogger === 'ssh') {
                     const user = document.getElementById('sshUser').value;
                     if (user) params.set('user', user);
@@ -989,9 +958,6 @@
                 } else if (this.currentLogger === 'cron') {
                     const app = document.getElementById('cronApp').value;
                     if (app) filters.set('app', app);
-
-                    const schedule = document.getElementById('schedule').value;
-                    if (schedule) filters.set('schedule', schedule);
                 } else if (this.currentLogger === 'ssh') {
                     const user = document.getElementById('sshUser').value;
                     if (user) filters.set('user', user);
@@ -1019,20 +985,40 @@
                 const response = await fetch(url);
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
+                let buffer = ''; // Buffer to accumulate incomplete lines
 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
+                    if (done) {
+                        // Process any remaining data in buffer
+                        if (buffer.trim()) {
+                            try {
+                                const logEntry = JSON.parse(buffer.trim());
+                                this.logs.push(logEntry);
+                            } catch (e) {
+                                console.error('Failed to parse final log entry:', buffer.trim());
+                            }
+                        }
+                        break;
+                    }
 
                     const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n').filter(line => line.trim());
+                    buffer += chunk;
+
+                    // Split by newlines and process complete lines
+                    const lines = buffer.split('\n');
+                    // Keep the last line in buffer as it might be incomplete
+                    buffer = lines.pop() || '';
 
                     for (const line of lines) {
-                        try {
-                            const logEntry = JSON.parse(line);
-                            this.logs.push(logEntry);
-                        } catch (e) {
-                            console.error('Failed to parse log entry:', line);
+                        const trimmedLine = line.trim();
+                        if (trimmedLine) {
+                            try {
+                                const logEntry = JSON.parse(trimmedLine);
+                                this.logs.push(logEntry);
+                            } catch (e) {
+                                console.error('Failed to parse log entry:', trimmedLine);
+                            }
                         }
                     }
                 }
@@ -1069,13 +1055,13 @@
                     // Calculate how many logs to show (currentPage * pageSize)
                     const logsToShow = Math.min(this.currentPage * this.pageSize, sortedLogs.length);
                     const visibleLogs = sortedLogs.slice(0, logsToShow);
-                    
+
                     const logsHtml = visibleLogs.map(log => this.renderLogEntry(log)).join('');
                     container.innerHTML = logsHtml;
-                    
+
                     // Update display counters
                     countEl.textContent = `${logsToShow} of ${this.logs.length} entries`;
-                    
+
                     // Show/hide load more button
                     const loadMoreBtn = document.getElementById('loadMore');
                     if (logsToShow < sortedLogs.length) {
@@ -1297,7 +1283,6 @@
 
                 // Clear Cron filters
                 document.getElementById('cronApp').value = '';
-                document.getElementById('schedule').value = '';
 
                 // Clear SSH filters
                 document.getElementById('sshUser').value = '';
@@ -1314,7 +1299,6 @@
                 document.getElementById('host').innerHTML = '<option value="">All hosts</option>';
                 document.getElementById('consoleApp').innerHTML = '<option value="">All apps</option>';
                 document.getElementById('cronApp').innerHTML = '<option value="">All apps</option>';
-                document.getElementById('schedule').innerHTML = '<option value="">All schedules</option>';
                 document.getElementById('sshUser').innerHTML = '<option value="">All users</option>';
                 document.getElementById('remoteAddr').innerHTML = '<option value="">All IPs</option>';
 

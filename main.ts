@@ -42,16 +42,6 @@ app.get("/api/apps", async (c) => {
     }
 });
 
-// API endpoint to get available schedules for cron logger
-app.get("/api/schedules", async (c) => {
-    const logger = c.req.query("logger");
-    try {
-        const schedules = await logsService.getSchedules(logger);
-        return c.json(Array.from(schedules));
-    } catch (_error) {
-        return c.json({ error: "Failed to load schedules" }, 500);
-    }
-});
 
 // API endpoint to get available users for ssh logger
 app.get("/api/users", async (c) => {
