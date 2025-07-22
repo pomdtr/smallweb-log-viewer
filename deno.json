@@ -1,0 +1,7 @@
+{
+    "exports": "./main.ts",
+    "lock": false,
+    "unstable": [
+        "raw-imports"
+    ]
+}

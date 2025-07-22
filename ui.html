@@ -556,7 +556,7 @@
 
             restoreHttpFiltersFromUrl() {
                 const urlParams = new URLSearchParams(window.location.search);
-                
+
                 const host = urlParams.get('request.host');
                 if (host) document.getElementById('host').value = host;
 
@@ -578,7 +578,7 @@
 
             restoreConsoleFiltersFromUrl() {
                 const urlParams = new URLSearchParams(window.location.search);
-                
+
                 const app = urlParams.get('app');
                 if (app) document.getElementById('consoleApp').value = app;
 
@@ -588,7 +588,7 @@
 
             restoreCronFiltersFromUrl() {
                 const urlParams = new URLSearchParams(window.location.search);
-                
+
                 const app = urlParams.get('app');
                 if (app) document.getElementById('cronApp').value = app;
 
@@ -680,10 +680,10 @@
 
                 // Listen for changes on all filter inputs to update URL
                 const filterInputs = [
-                    'level', 'messageSearch', 'host', 'method', 'path', 'status', 
+                    'level', 'messageSearch', 'host', 'method', 'path', 'status',
                     'ip', 'minLatency', 'consoleApp', 'stream', 'cronApp', 'schedule'
                 ];
-                
+
                 filterInputs.forEach(id => {
                     const element = document.getElementById(id);
                     if (element) {
@@ -702,7 +702,7 @@
 
             loadFiltersFromUrl() {
                 const urlParams = new URLSearchParams(window.location.search);
-                
+
                 // Load basic filters
                 const level = urlParams.get('level');
                 if (level) document.getElementById('level').value = level;
@@ -727,7 +727,7 @@
 
             updateUrlParams() {
                 const params = new URLSearchParams();
-                
+
                 // Get current filter values
                 const logger = document.getElementById('logger').value;
                 if (logger) params.set('logger', logger);
@@ -772,10 +772,10 @@
                 }
 
                 // Update browser URL without triggering page reload
-                const newUrl = params.toString() ? 
-                    `${window.location.pathname}?${params.toString()}` : 
+                const newUrl = params.toString() ?
+                    `${window.location.pathname}?${params.toString()}` :
                     window.location.pathname;
-                
+
                 window.history.replaceState({}, '', newUrl);
             }
 
@@ -893,7 +893,7 @@
 
                 // Sort logs by timestamp in descending order (most recent first)
                 const sortedLogs = [...this.logs].sort((a, b) => new Date(b.time) - new Date(a.time));
-                
+
                 const logsHtml = sortedLogs.map(log => this.renderLogEntry(log)).join('');
                 container.innerHTML = logsHtml;
                 countEl.textContent = `${this.logs.length} entries`;

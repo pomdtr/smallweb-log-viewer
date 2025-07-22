@@ -1,12 +1,12 @@
 import { Hono } from "jsr:@hono/hono";
 import { LogsService } from "./logs-service.ts";
+import html from "./ui.html" with { type: "text" };
 
 const app = new Hono();
 const logsService = new LogsService();
 
 // Serve the UI on the root path
-app.get("/", async (c) => {
-    const html = await Deno.readTextFile("ui.html");
+app.get("/", (c) => {
     return c.html(html);
 });
 

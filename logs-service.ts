@@ -1,13 +1,13 @@
 import { JsonParseStream } from "jsr:@std/json/parse-stream";
 import { TextLineStream } from "jsr:@std/streams/text-line-stream";
-import type { LogEntry, HttpLogEntry, ConsoleLogEntry, CronLogEntry } from "./types.ts";
+import type { ConsoleLogEntry, CronLogEntry, HttpLogEntry, LogEntry } from "./types.ts";
 
 export class LogsService {
     private readonly logFilePath = "data/logs.jsonl";
 
     async getLoggers(): Promise<Set<string>> {
         const loggers = new Set<string>();
-        
+
         try {
             const file = await Deno.open(this.logFilePath, { read: true });
             const readable = file.readable
@@ -29,7 +29,7 @@ export class LogsService {
 
     async getHosts(logger?: string): Promise<Set<string>> {
         const hosts = new Set<string>();
-        
+
         try {
             const file = await Deno.open(this.logFilePath, { read: true });
             const readable = file.readable
@@ -40,12 +40,12 @@ export class LogsService {
             for await (const chunk of readable) {
                 if (typeof chunk === "object" && chunk !== null && "logger" in chunk) {
                     const logEntry = chunk as LogEntry;
-                    
+
                     // Filter by logger if specified
                     if (logger && logEntry.logger !== logger) {
                         continue;
                     }
-                    
+
                     if (logEntry.logger === "http" && "request" in logEntry) {
                         const httpEntry = logEntry as HttpLogEntry;
                         if (httpEntry.request?.host) {
@@ -63,7 +63,7 @@ export class LogsService {
 
     async getApps(logger?: string): Promise<Set<string>> {
         const apps = new Set<string>();
-        
+
         try {
             const file = await Deno.open(this.logFilePath, { read: true });
             const readable = file.readable
@@ -74,12 +74,12 @@ export class LogsService {
             for await (const chunk of readable) {
                 if (typeof chunk === "object" && chunk !== null && "logger" in chunk) {
                     const logEntry = chunk as LogEntry;
-                    
+
                     // Filter by logger if specified
                     if (logger && logEntry.logger !== logger) {
                         continue;
                     }
-                    
+
                     if ((logEntry.logger === "console" || logEntry.logger === "cron") && "app" in logEntry) {
                         const appEntry = logEntry as ConsoleLogEntry | CronLogEntry;
                         if (appEntry.app) {
@@ -97,7 +97,7 @@ export class LogsService {
 
     async getSchedules(logger?: string): Promise<Set<string>> {
         const schedules = new Set<string>();
-        
+
         try {
             const file = await Deno.open(this.logFilePath, { read: true });
             const readable = file.readable
@@ -108,12 +108,12 @@ export class LogsService {
             for await (const chunk of readable) {
                 if (typeof chunk === "object" && chunk !== null && "logger" in chunk) {
                     const logEntry = chunk as LogEntry;
-                    
+
                     // Filter by logger if specified
                     if (logger && logEntry.logger !== logger) {
                         continue;
                     }
-                    
+
                     if (logEntry.logger === "cron" && "schedule" in logEntry) {
                         const cronEntry = logEntry as CronLogEntry;
                         if (cronEntry.schedule) {
