@@ -353,6 +353,18 @@
             margin-right: 8px;
         }
 
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pagination-info {
+            color: #718096;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
         .stream-stdout {
             background: #48bb78;
         }
@@ -523,7 +535,21 @@
         <div class="logs-container">
             <div class="logs-header">
                 <h3>Request Logs</h3>
-                <div class="logs-count" id="logsCount">0 entries</div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="logs-count" id="logsCount">0 entries</div>
+                    <div class="pagination-controls">
+                        <select id="pageSize" style="padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px;">
+                            <option value="25">Show 25</option>
+                            <option value="50" selected>Show 50</option>
+                            <option value="100">Show 100</option>
+                            <option value="200">Show 200</option>
+                            <option value="all">Show All</option>
+                        </select>
+                        <button id="loadMore" class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px; display: none;">
+                            Load More
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="logs-content" id="logsContent">
                 <div class="empty-state">
@@ -538,8 +564,11 @@
         class LogsViewer {
             constructor() {
                 this.logs = [];
+                this.allLogs = []; // Store all logs for pagination
                 this.filteredLogs = [];
                 this.currentLogger = '';
+                this.currentPage = 1;
+                this.pageSize = 50;
                 this.init();
             }
 
@@ -783,6 +812,18 @@
                     this.clearFilters();
                 });
 
+                // Pagination controls
+                document.getElementById('pageSize').addEventListener('change', (e) => {
+                    this.pageSize = e.target.value === 'all' ? Infinity : parseInt(e.target.value);
+                    this.currentPage = 1;
+                    this.renderLogs();
+                });
+
+                document.getElementById('loadMore').addEventListener('click', () => {
+                    this.currentPage++;
+                    this.renderLogs();
+                });
+
                 // Listen for changes on all filter inputs to update URL
                 const filterInputs = [
                     'level', 'messageSearch', 'host', 'method', 'path', 'status',
@@ -967,6 +1008,7 @@
 
             async loadLogs(logger, filters) {
                 this.logs = [];
+                this.currentPage = 1; // Reset pagination when loading new logs
                 const url = new URL('/logs', window.location);
                 url.searchParams.set('logger', logger);
 
@@ -1010,15 +1052,41 @@
                         </div>
                     `;
                     countEl.textContent = '0 entries';
+                    document.getElementById('loadMore').style.display = 'none';
                     return;
                 }
 
                 // Sort logs by timestamp in descending order (most recent first)
                 const sortedLogs = [...this.logs].sort((a, b) => new Date(b.time) - new Date(a.time));
 
-                const logsHtml = sortedLogs.map(log => this.renderLogEntry(log)).join('');
-                container.innerHTML = logsHtml;
-                countEl.textContent = `${this.logs.length} entries`;
+                // If pageSize is infinite (show all), render all logs
+                if (this.pageSize === Infinity) {
+                    const logsHtml = sortedLogs.map(log => this.renderLogEntry(log)).join('');
+                    container.innerHTML = logsHtml;
+                    countEl.textContent = `${this.logs.length} entries`;
+                    document.getElementById('loadMore').style.display = 'none';
+                } else {
+                    // Calculate how many logs to show (currentPage * pageSize)
+                    const logsToShow = Math.min(this.currentPage * this.pageSize, sortedLogs.length);
+                    const visibleLogs = sortedLogs.slice(0, logsToShow);
+                    
+                    const logsHtml = visibleLogs.map(log => this.renderLogEntry(log)).join('');
+                    container.innerHTML = logsHtml;
+                    
+                    // Update display counters
+                    countEl.textContent = `${logsToShow} of ${this.logs.length} entries`;
+                    
+                    // Show/hide load more button
+                    const loadMoreBtn = document.getElementById('loadMore');
+                    if (logsToShow < sortedLogs.length) {
+                        loadMoreBtn.style.display = 'inline-block';
+                        const remaining = sortedLogs.length - logsToShow;
+                        const nextPageSize = Math.min(this.pageSize, remaining);
+                        loadMoreBtn.textContent = `Load ${nextPageSize} more logs`;
+                    } else {
+                        loadMoreBtn.style.display = 'none';
+                    }
+                }
             }
 
             renderLogEntry(log) {
