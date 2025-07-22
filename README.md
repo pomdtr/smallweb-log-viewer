@@ -1,4 +1,4 @@
-# Logs Viewer
+# Smallweb Logs Viewer
 
 An interactive web application for viewing and filtering HTTP request logs. Built with Deno, Hono, and vanilla JavaScript.
 
