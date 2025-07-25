@@ -71,8 +71,6 @@
 
         .sidebar {
             width: 400px;
-            min-width: 300px;
-            max-width: 600px;
             background: var(--bg-secondary);
             border-right: 1px solid var(--border-color);
             display: flex;
@@ -634,7 +632,6 @@
                     <path d="M15 18l-6-6 6-6"></path>
                 </svg>
             </div>
-            <div class="resize-handle" id="resizeHandle"></div>
 
             <div class="header">
                 <h2>Filters</h2>
@@ -1673,13 +1670,10 @@
             setupSidebarControls() {
                 const sidebar = document.getElementById('sidebar');
                 const sidebarToggle = document.getElementById('sidebarToggle');
-                const resizeHandle = document.getElementById('resizeHandle');
 
                 // Toggle sidebar
                 sidebarToggle.addEventListener('click', () => {
                     sidebar.classList.toggle('collapsed');
-
-                    // Save state to localStorage
                     localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
                 });
 
@@ -1687,46 +1681,6 @@
                 const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
                 if (isCollapsed) {
                     sidebar.classList.add('collapsed');
-                }
-
-                // Sidebar resize functionality
-                let isResizing = false;
-                let startX = 0;
-                let startWidth = 0;
-
-                resizeHandle.addEventListener('mousedown', (e) => {
-                    isResizing = true;
-                    startX = e.clientX;
-                    startWidth = parseInt(document.defaultView.getComputedStyle(sidebar).width, 10);
-                    document.body.style.cursor = 'col-resize';
-                    e.preventDefault();
-                });
-
-                document.addEventListener('mousemove', (e) => {
-                    if (!isResizing) return;
-
-                    const width = startWidth + e.clientX - startX;
-                    const minWidth = 300;
-                    const maxWidth = 600;
-
-                    if (width >= minWidth && width <= maxWidth) {
-                        sidebar.style.width = width + 'px';
-                        // Save width to localStorage
-                        localStorage.setItem('sidebarWidth', width);
-                    }
-                });
-
-                document.addEventListener('mouseup', () => {
-                    if (isResizing) {
-                        isResizing = false;
-                        document.body.style.cursor = '';
-                    }
-                });
-
-                // Restore sidebar width
-                const savedWidth = localStorage.getItem('sidebarWidth');
-                if (savedWidth) {
-                    sidebar.style.width = savedWidth + 'px';
                 }
             }
         }
