@@ -262,7 +262,6 @@
 
         .log-entry {
             border-bottom: 1px solid #f0f0f0;
-            padding: 15px 20px;
             transition: background-color 0.2s ease;
         }
 
@@ -278,7 +277,49 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+        }
+
+        .log-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .log-timestamp {
+            color: #718096;
+            font-size: 12px;
+            min-width: 140px;
+            text-align: right;
+        }
+
+        .expand-button {
+            background: none;
+            border: none;
+            color: #718096;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            margin-left: 8px;
+        }
+
+        .expand-button:hover {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .expand-button svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .log-entry.expanded .expand-button svg {
+            transform: rotate(180deg);
         }
 
         .log-method {
@@ -347,12 +388,18 @@
         }
 
         .log-details {
-            display: grid;
+            display: none;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 10px;
-            margin-top: 8px;
+            padding: 0 20px 15px 20px;
             font-size: 12px;
             color: #718096;
+            border-top: 1px solid #f0f0f0;
+            background: #f8f9fa;
+        }
+
+        .log-entry.expanded .log-details {
+            display: grid;
         }
 
         .log-detail {
@@ -720,7 +767,7 @@
                 <div class="logs-content" id="logsContent">
                     <div class="empty-state">
                         <h3>Select a logger to view logs</h3>
-                        <p>Choose a logger from the dropdown above to start viewing HTTP request logs.</p>
+                        <p>Choose a logger from the sidebar to start viewing logs.</p>
                     </div>
                 </div>
                 <div class="logs-footer" id="logsFooter" style="display: none;">
@@ -1276,14 +1323,22 @@
                 const latencyMs = (log.response.latency / 1000000).toFixed(2);
 
                 return `
-                    <div class="log-entry">
-                        <div class="log-header">
-                            <div>
+                    <div class="log-entry" data-log-id="${log.time}">
+                        <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
+                            <div class="log-summary">
                                 <span class="log-method ${methodClass}">${log.request.method}</span>
                                 <span class="log-status ${statusClass}">${log.response.status}</span>
-                                <span class="log-path">${log.request.host}${log.request.path}${log.request.query ? '?' + log.request.query : ''}</span>
+                                <span class="log-path">${log.request.host}${log.request.path}</span>
+                                <span style="color: #718096; font-size: 11px;">${latencyMs}ms</span>
                             </div>
-                            <div style="color: #718096; font-size: 12px;">${time}</div>
+                            <div style="display: flex; align-items: center;">
+                                <div class="log-timestamp">${time}</div>
+                                <button class="expand-button">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="log-details">
                             <div class="log-detail">
@@ -1298,6 +1353,11 @@
                             <div class="log-detail">
                                 <span class="log-detail-label">Response Size:</span> ${log.response.length || 0} bytes
                             </div>
+                            ${log.request.query ? `
+                                <div class="log-detail">
+                                    <span class="log-detail-label">Query:</span> ${log.request.query}
+                                </div>
+                            ` : ''}
                             ${log.request.referer ? `
                                 <div class="log-detail">
                                     <span class="log-detail-label">Referer:</span> ${log.request.referer}
@@ -1315,16 +1375,24 @@
 
             renderConsoleLogEntry(log, time) {
                 const streamClass = log.stream ? `stream-${log.stream}` : '';
+                const truncatedMsg = log.msg.length > 100 ? log.msg.substring(0, 100) + '...' : log.msg;
 
                 return `
-                    <div class="log-entry">
-                        <div class="log-header">
-                            <div>
+                    <div class="log-entry" data-log-id="${log.time}">
+                        <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
+                            <div class="log-summary">
                                 <span class="app-badge">${log.app}</span>
                                 ${log.stream ? `<span class="log-status ${streamClass}">${log.stream}</span>` : ''}
-                                <span class="log-path">${log.msg}</span>
+                                <span class="log-path">${truncatedMsg}</span>
                             </div>
-                            <div style="color: #718096; font-size: 12px;">${time}</div>
+                            <div style="display: flex; align-items: center;">
+                                <div class="log-timestamp">${time}</div>
+                                <button class="expand-button">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="log-details">
                             <div class="log-detail">
@@ -1338,21 +1406,33 @@
                                     <span class="log-detail-label">Stream:</span> ${log.stream}
                                 </div>
                             ` : ''}
+                            <div class="log-detail" style="grid-column: 1 / -1;">
+                                <span class="log-detail-label">Full Message:</span> ${log.msg}
+                            </div>
                         </div>
                     </div>
                 `;
             }
 
             renderCronLogEntry(log, time) {
+                const truncatedMsg = log.msg.length > 80 ? log.msg.substring(0, 80) + '...' : log.msg;
+
                 return `
-                    <div class="log-entry">
-                        <div class="log-header">
-                            <div>
+                    <div class="log-entry" data-log-id="${log.time}">
+                        <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
+                            <div class="log-summary">
                                 <span class="app-badge">${log.app}</span>
                                 <span class="schedule-badge">${log.schedule}</span>
-                                <span class="log-path">${log.msg}</span>
+                                <span class="log-path">${truncatedMsg}</span>
                             </div>
-                            <div style="color: #718096; font-size: 12px;">${time}</div>
+                            <div style="display: flex; align-items: center;">
+                                <div class="log-timestamp">${time}</div>
+                                <button class="expand-button">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="log-details">
                             <div class="log-detail">
@@ -1369,6 +1449,9 @@
                                     <span class="log-detail-label">Args:</span> ${log.args.join(', ')}
                                 </div>
                             ` : ''}
+                            <div class="log-detail" style="grid-column: 1 / -1;">
+                                <span class="log-detail-label">Full Message:</span> ${log.msg}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1378,16 +1461,24 @@
                 const commandText = Array.isArray(log.command) ? log.command.join(' ') : (log.command || '');
                 const remoteAddr = log['remote addr'] || 'unknown';
                 const ip = remoteAddr.split(':')[0]; // Extract IP without port
+                const truncatedCommand = commandText.length > 60 ? commandText.substring(0, 60) + '...' : commandText;
 
                 return `
-                    <div class="log-entry">
-                        <div class="log-header">
-                            <div>
+                    <div class="log-entry" data-log-id="${log.time}">
+                        <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
+                            <div class="log-summary">
                                 <span class="user-badge">${log.user}</span>
-                                <span class="command-badge">${commandText}</span>
-                                <span class="log-path">SSH connection from ${ip}</span>
+                                <span class="command-badge">${truncatedCommand}</span>
+                                <span class="log-path">SSH from ${ip}</span>
                             </div>
-                            <div style="color: #718096; font-size: 12px;">${time}</div>
+                            <div style="display: flex; align-items: center;">
+                                <div class="log-timestamp">${time}</div>
+                                <button class="expand-button">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="log-details">
                             <div class="log-detail">
@@ -1397,10 +1488,10 @@
                                 <span class="log-detail-label">Remote Address:</span> ${remoteAddr}
                             </div>
                             <div class="log-detail">
-                                <span class="log-detail-label">Command:</span> ${commandText}
-                            </div>
-                            <div class="log-detail">
                                 <span class="log-detail-label">Level:</span> ${log.level}
+                            </div>
+                            <div class="log-detail" style="grid-column: 1 / -1;">
+                                <span class="log-detail-label">Full Command:</span> ${commandText}
                             </div>
                             ${log.msg ? `
                                 <div class="log-detail" style="grid-column: 1 / -1;">
@@ -1413,14 +1504,23 @@
             }
 
             renderGenericLogEntry(log, time) {
+                const truncatedMsg = log.msg.length > 100 ? log.msg.substring(0, 100) + '...' : log.msg;
+
                 return `
-                    <div class="log-entry">
-                        <div class="log-header">
-                            <div>
+                    <div class="log-entry" data-log-id="${log.time}">
+                        <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
+                            <div class="log-summary">
                                 <span class="log-method">${log.level}</span>
-                                <span class="log-path">${log.msg}</span>
+                                <span class="log-path">${truncatedMsg}</span>
                             </div>
-                            <div style="color: #718096; font-size: 12px;">${time}</div>
+                            <div style="display: flex; align-items: center;">
+                                <div class="log-timestamp">${time}</div>
+                                <button class="expand-button">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="log-details">
                             <div class="log-detail">
@@ -1428,6 +1528,9 @@
                             </div>
                             <div class="log-detail">
                                 <span class="log-detail-label">Level:</span> ${log.level}
+                            </div>
+                            <div class="log-detail" style="grid-column: 1 / -1;">
+                                <span class="log-detail-label">Full Message:</span> ${log.msg}
                             </div>
                         </div>
                     </div>
