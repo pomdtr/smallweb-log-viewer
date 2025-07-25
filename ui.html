@@ -12,10 +12,54 @@
             box-sizing: border-box;
         }
 
+        :root {
+            /* Light theme colors */
+            --bg-primary: #f8f9fa;
+            --bg-secondary: white;
+            --bg-tertiary: #f7fafc;
+            --border-color: #e2e8f0;
+            --border-light: #f0f0f0;
+            --text-primary: #333;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --text-label: #4a5568;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --accent-blue: #3182ce;
+            --accent-blue-hover: #2c5aa0;
+            --accent-blue-light: rgba(49, 130, 206, 0.1);
+            --accent-gray: #e2e8f0;
+            --accent-gray-hover: #cbd5e0;
+            --error-bg: #fed7d7;
+            --error-text: #c53030;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark theme colors */
+                --bg-primary: #1a202c;
+                --bg-secondary: #2d3748;
+                --bg-tertiary: #4a5568;
+                --border-color: #4a5568;
+                --border-light: #718096;
+                --text-primary: #f7fafc;
+                --text-secondary: #e2e8f0;
+                --text-muted: #a0aec0;
+                --text-label: #e2e8f0;
+                --shadow-color: rgba(0, 0, 0, 0.3);
+                --accent-blue: #4299e1;
+                --accent-blue-hover: #3182ce;
+                --accent-blue-light: rgba(66, 153, 225, 0.1);
+                --accent-gray: #4a5568;
+                --accent-gray-hover: #718096;
+                --error-bg: #742a2a;
+                --error-text: #feb2b2;
+            }
+        }
+
         body {
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8f9fa;
-            color: #333;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             height: 100vh;
             overflow: hidden;
         }
@@ -29,8 +73,8 @@
             width: 400px;
             min-width: 300px;
             max-width: 600px;
-            background: white;
-            border-right: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             transition: margin-left 0.3s ease;
@@ -47,8 +91,8 @@
             right: 15px;
             width: 32px;
             height: 32px;
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             cursor: pointer;
             display: flex;
@@ -64,21 +108,21 @@
             left: 10px;
             width: 40px;
             height: 40px;
-            background: white;
-            border: 1px solid #e2e8f0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px var(--shadow-color);
             z-index: 100;
         }
 
         .sidebar-toggle:hover {
-            background: #f7fafc;
+            background: var(--bg-tertiary);
         }
 
         .sidebar-toggle svg {
             width: 16px;
             height: 16px;
-            color: #4a5568;
+            color: var(--text-secondary);
             transition: transform 0.3s ease;
         }
 
@@ -99,12 +143,12 @@
         }
 
         .resize-handle:hover {
-            background: #3182ce;
+            background: var(--accent-blue);
         }
 
         .header {
             padding: 20px 30px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
             position: relative;
         }
@@ -112,19 +156,19 @@
         h1 {
             font-size: 28px;
             font-weight: 700;
-            color: #1a202c;
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
 
         .sidebar h2 {
             font-size: 18px;
             font-weight: 600;
-            color: #2d3748;
+            color: var(--text-secondary);
             margin-bottom: 8px;
         }
 
         .subtitle {
-            color: #718096;
+            color: var(--text-muted);
             font-size: 14px;
         }
 
@@ -150,7 +194,7 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #4a5568;
+            color: var(--text-label);
             font-size: 13px;
         }
 
@@ -158,18 +202,19 @@
         input {
             width: 100%;
             padding: 10px 12px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--border-color);
             border-radius: 6px;
             font-size: 13px;
             transition: all 0.2s ease;
-            background: white;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
 
         select:focus,
         input:focus {
             outline: none;
-            border-color: #3182ce;
-            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px var(--accent-blue-light);
         }
 
         .filter-actions {
@@ -201,34 +246,34 @@
 
         .logs-container {
             flex: 1;
-            background: white;
+            background: var(--bg-secondary);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
         .btn-primary {
-            background: #3182ce;
+            background: var(--accent-blue);
             color: white;
         }
 
         .btn-primary:hover {
-            background: #2c5aa0;
+            background: var(--accent-blue-hover);
         }
 
         .btn-secondary {
-            background: #e2e8f0;
-            color: #4a5568;
+            background: var(--accent-gray);
+            color: var(--text-secondary);
         }
 
         .btn-secondary:hover {
-            background: #cbd5e0;
+            background: var(--accent-gray-hover);
         }
 
         .logs-header {
-            background: #f7fafc;
+            background: var(--bg-tertiary);
             padding: 25px 30px 20px 30px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -244,7 +289,7 @@
         }
 
         .logs-count {
-            color: #718096;
+            color: var(--text-muted);
             font-size: 14px;
             margin: 0;
         }
@@ -256,17 +301,17 @@
 
         .logs-footer {
             padding: 20px;
-            border-top: 1px solid #e2e8f0;
-            background: #f7fafc;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
         }
 
         .log-entry {
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid var(--border-light);
             transition: background-color 0.2s ease;
         }
 
         .log-entry:hover {
-            background: #f8f9fa;
+            background: var(--bg-tertiary);
         }
 
         .log-entry:last-child {
@@ -287,10 +332,11 @@
             gap: 8px;
             flex: 1;
             min-width: 0;
+            overflow: hidden;
         }
 
         .log-timestamp {
-            color: #718096;
+            color: var(--text-muted);
             font-size: 12px;
             min-width: 140px;
             text-align: right;
@@ -299,7 +345,7 @@
         .expand-button {
             background: none;
             border: none;
-            color: #718096;
+            color: var(--text-muted);
             cursor: pointer;
             padding: 4px;
             border-radius: 4px;
@@ -308,8 +354,8 @@
         }
 
         .expand-button:hover {
-            background: #e2e8f0;
-            color: #4a5568;
+            background: var(--accent-gray);
+            color: var(--text-secondary);
         }
 
         .expand-button svg {
@@ -383,19 +429,24 @@
         .log-path {
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 14px;
-            color: #2d3748;
+            color: var(--text-primary);
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            min-width: 0;
         }
 
         .log-details {
             display: none;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 10px;
-            padding: 0 20px 15px 20px;
+            padding: 15px 20px 15px 20px;
             font-size: 12px;
-            color: #718096;
-            border-top: 1px solid #f0f0f0;
-            background: #f8f9fa;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-tertiary);
         }
 
         .log-entry.expanded .log-details {
@@ -403,36 +454,37 @@
         }
 
         .log-detail {
-            background: #f7fafc;
+            background: var(--bg-secondary);
             padding: 6px 10px;
             border-radius: 6px;
+            border: 1px solid var(--border-color);
         }
 
         .log-detail-label {
             font-weight: 600;
-            color: #4a5568;
+            color: var(--text-secondary);
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #718096;
+            color: var(--text-muted);
         }
 
         .empty-state h3 {
             margin-bottom: 10px;
-            color: #4a5568;
+            color: var(--text-secondary);
         }
 
         .loading {
             text-align: center;
             padding: 40px;
-            color: #718096;
+            color: var(--text-muted);
         }
 
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3182ce;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-blue);
             border-radius: 50%;
             width: 30px;
             height: 30px;
@@ -451,8 +503,8 @@
         }
 
         .error {
-            background: #fed7d7;
-            color: #c53030;
+            background: var(--error-bg);
+            color: var(--error-text);
             padding: 15px 20px;
             border-radius: 8px;
             margin: 20px 0;
@@ -461,7 +513,7 @@
         .logger-specific-filters {
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid var(--border-color);
         }
 
         .app-badge {
@@ -514,7 +566,7 @@
         }
 
         .pagination-info {
-            color: #718096;
+            color: var(--text-muted);
             font-size: 12px;
             margin-left: 10px;
         }
@@ -539,7 +591,7 @@
                 height: auto;
                 max-height: 50vh;
                 border-right: none;
-                border-bottom: 1px solid #e2e8f0;
+                border-bottom: 1px solid var(--border-color);
             }
 
             .sidebar.collapsed {
@@ -554,7 +606,7 @@
                 top: auto;
                 bottom: -40px;
                 right: 20px;
-                border: 1px solid #e2e8f0;
+                border: 1px solid var(--border-color);
                 border-top: none;
                 border-radius: 0 0 8px 8px;
             }
@@ -754,7 +806,7 @@
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <div class="pagination-controls">
                             <select id="pageSize"
-                                style="padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px;">
+                                style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; background: var(--bg-secondary); color: var(--text-primary);">
                                 <option value="25">Show 25</option>
                                 <option value="50" selected>Show 50</option>
                                 <option value="100">Show 100</option>
@@ -1322,14 +1374,17 @@
                 const methodClass = `method-${log.request.method}`;
                 const latencyMs = (log.response.latency / 1000000).toFixed(2);
 
+                // Create a clean, single-line path display
+                const fullPath = `${log.request.host}${log.request.path}`;
+
                 return `
                     <div class="log-entry" data-log-id="${log.time}">
                         <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
                             <div class="log-summary">
                                 <span class="log-method ${methodClass}">${log.request.method}</span>
                                 <span class="log-status ${statusClass}">${log.response.status}</span>
-                                <span class="log-path">${log.request.host}${log.request.path}</span>
-                                <span style="color: #718096; font-size: 11px;">${latencyMs}ms</span>
+                                <span class="log-path">${fullPath}</span>
+                                <span style="color: #718096; font-size: 11px; white-space: nowrap;">${latencyMs}ms</span>
                             </div>
                             <div style="display: flex; align-items: center;">
                                 <div class="log-timestamp">${time}</div>
@@ -1375,7 +1430,6 @@
 
             renderConsoleLogEntry(log, time) {
                 const streamClass = log.stream ? `stream-${log.stream}` : '';
-                const truncatedMsg = log.msg.length > 100 ? log.msg.substring(0, 100) + '...' : log.msg;
 
                 return `
                     <div class="log-entry" data-log-id="${log.time}">
@@ -1383,7 +1437,7 @@
                             <div class="log-summary">
                                 <span class="app-badge">${log.app}</span>
                                 ${log.stream ? `<span class="log-status ${streamClass}">${log.stream}</span>` : ''}
-                                <span class="log-path">${truncatedMsg}</span>
+                                <span class="log-path">${log.msg}</span>
                             </div>
                             <div style="display: flex; align-items: center;">
                                 <div class="log-timestamp">${time}</div>
@@ -1415,15 +1469,13 @@
             }
 
             renderCronLogEntry(log, time) {
-                const truncatedMsg = log.msg.length > 80 ? log.msg.substring(0, 80) + '...' : log.msg;
-
                 return `
                     <div class="log-entry" data-log-id="${log.time}">
                         <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
                             <div class="log-summary">
                                 <span class="app-badge">${log.app}</span>
                                 <span class="schedule-badge">${log.schedule}</span>
-                                <span class="log-path">${truncatedMsg}</span>
+                                <span class="log-path">${log.msg}</span>
                             </div>
                             <div style="display: flex; align-items: center;">
                                 <div class="log-timestamp">${time}</div>
@@ -1461,14 +1513,13 @@
                 const commandText = Array.isArray(log.command) ? log.command.join(' ') : (log.command || '');
                 const remoteAddr = log['remote addr'] || 'unknown';
                 const ip = remoteAddr.split(':')[0]; // Extract IP without port
-                const truncatedCommand = commandText.length > 60 ? commandText.substring(0, 60) + '...' : commandText;
 
                 return `
                     <div class="log-entry" data-log-id="${log.time}">
                         <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
                             <div class="log-summary">
                                 <span class="user-badge">${log.user}</span>
-                                <span class="command-badge">${truncatedCommand}</span>
+                                <span class="command-badge">${commandText}</span>
                                 <span class="log-path">SSH from ${ip}</span>
                             </div>
                             <div style="display: flex; align-items: center;">
@@ -1504,14 +1555,12 @@
             }
 
             renderGenericLogEntry(log, time) {
-                const truncatedMsg = log.msg.length > 100 ? log.msg.substring(0, 100) + '...' : log.msg;
-
                 return `
                     <div class="log-entry" data-log-id="${log.time}">
                         <div class="log-header" onclick="this.parentElement.classList.toggle('expanded')">
                             <div class="log-summary">
                                 <span class="log-method">${log.level}</span>
-                                <span class="log-path">${truncatedMsg}</span>
+                                <span class="log-path">${log.msg}</span>
                             </div>
                             <div style="display: flex; align-items: center;">
                                 <div class="log-timestamp">${time}</div>
