@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logs Viewer</title>
+    <title>Logs Explorer</title>
     <style>
         * {
             margin: 0;
@@ -16,40 +16,122 @@
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f8f9fa;
             color: #333;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 400px;
+            min-width: 300px;
+            max-width: 600px;
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+            position: relative;
+        }
+
+        .sidebar.collapsed {
+            margin-left: -400px;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 32px;
+            height: 32px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 10px;
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .sidebar-toggle:hover {
+            background: #f7fafc;
+        }
+
+        .sidebar-toggle svg {
+            width: 16px;
+            height: 16px;
+            color: #4a5568;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed .sidebar-toggle svg {
+            width: 20px;
+            height: 20px;
+            transform: rotate(180deg);
+        }
+
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            background: transparent;
+            cursor: col-resize;
+        }
+
+        .resize-handle:hover {
+            background: #3182ce;
         }
 
         .header {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            position: relative;
         }
 
         h1 {
             font-size: 28px;
             font-weight: 700;
             color: #1a202c;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
         }
 
         .subtitle {
             color: #718096;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .filters {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 30px;
         }
 
         .filter-row {
@@ -61,7 +143,7 @@
 
         .filter-group {
             flex: 1;
-            min-width: 200px;
+            min-width: 150px;
         }
 
         label {
@@ -69,16 +151,16 @@
             margin-bottom: 5px;
             font-weight: 600;
             color: #4a5568;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         select,
         input {
             width: 100%;
-            padding: 12px 16px;
+            padding: 10px 12px;
             border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 6px;
+            font-size: 13px;
             transition: all 0.2s ease;
             background: white;
         }
@@ -92,21 +174,37 @@
 
         .filter-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 15px;
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s ease;
             text-decoration: none;
             display: inline-block;
             text-align: center;
+            flex: 1;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .logs-container {
+            flex: 1;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .btn-primary {
@@ -127,30 +225,39 @@
             background: #cbd5e0;
         }
 
-        .logs-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-        }
-
         .logs-header {
             background: #f7fafc;
-            padding: 20px;
+            padding: 25px 30px 20px 30px;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            transition: padding-left 0.3s ease;
+        }
+
+        .sidebar.collapsed~.main-content .logs-header {
+            padding-left: 70px;
+        }
+
+        .logs-header h1 {
+            margin-bottom: 5px;
         }
 
         .logs-count {
             color: #718096;
             font-size: 14px;
+            margin: 0;
         }
 
         .logs-content {
-            max-height: 600px;
+            flex: 1;
             overflow-y: auto;
+        }
+
+        .logs-footer {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            background: #f7fafc;
         }
 
         .log-entry {
@@ -374,6 +481,41 @@
         }
 
         @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                min-width: 100%;
+                max-width: 100%;
+                height: auto;
+                max-height: 50vh;
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .sidebar.collapsed {
+                margin-left: 0;
+                height: 0;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .sidebar-toggle {
+                position: absolute;
+                top: auto;
+                bottom: -40px;
+                right: 20px;
+                border: 1px solid #e2e8f0;
+                border-top: none;
+                border-radius: 0 0 8px 8px;
+            }
+
+            .resize-handle {
+                display: none;
+            }
+
             .filter-row {
                 flex-direction: column;
             }
@@ -386,171 +528,206 @@
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Logs Viewer</h1>
-            <p class="subtitle">Interactive log filtering and viewing for HTTP requests</p>
+    <div class="app-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-toggle" id="sidebarToggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"></path>
+                </svg>
+            </div>
+            <div class="resize-handle" id="resizeHandle"></div>
+
+            <div class="header">
+                <h2>Filters</h2>
+                <p class="subtitle">Configure log filters</p>
+            </div>
+
+            <div class="filters">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="logger">Logger:</label>
+                        <select id="logger">
+                            <option value="">Select a logger...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="level">Level:</label>
+                        <select id="level">
+                            <option value="">All levels</option>
+                            <option value="INFO">INFO</option>
+                            <option value="ERROR">ERROR</option>
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="WARN">WARN</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="messageSearch">Message (contains):</label>
+                        <input type="text" id="messageSearch" placeholder="Search in log messages">
+                    </div>
+                </div>
+
+                <!-- HTTP Logger Filters -->
+                <div id="httpFilters" class="logger-specific-filters" style="display: none;">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="host">Host:</label>
+                            <select id="host">
+                                <option value="">All hosts</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="method">Method:</label>
+                            <select id="method">
+                                <option value="">All methods</option>
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                                <option value="DELETE">DELETE</option>
+                                <option value="PATCH">PATCH</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="path">Path (contains):</label>
+                            <input type="text" id="path" placeholder="e.g., /api/users">
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="status">Status Code:</label>
+                            <select id="status">
+                                <option value="">All statuses</option>
+                                <option value="200">200 - OK</option>
+                                <option value="201">201 - Created</option>
+                                <option value="400">400 - Bad Request</option>
+                                <option value="401">401 - Unauthorized</option>
+                                <option value="403">403 - Forbidden</option>
+                                <option value="404">404 - Not Found</option>
+                                <option value="500">500 - Internal Server Error</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="ip">IP Address:</label>
+                            <input type="text" id="ip" placeholder="e.g., 192.168.1.1">
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="minLatency">Min Latency (ms):</label>
+                            <input type="number" id="minLatency" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Console Logger Filters -->
+                <div id="consoleFilters" class="logger-specific-filters" style="display: none;">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="consoleApp">App:</label>
+                            <select id="consoleApp">
+                                <option value="">All apps</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="stream">Stream:</label>
+                            <select id="stream">
+                                <option value="">All streams</option>
+                                <option value="stdout">stdout</option>
+                                <option value="stderr">stderr</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cron Logger Filters -->
+                <div id="cronFilters" class="logger-specific-filters" style="display: none;">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="cronApp">App:</label>
+                            <select id="cronApp">
+                                <option value="">All apps</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SSH Logger Filters -->
+                <div id="sshFilters" class="logger-specific-filters" style="display: none;">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="sshUser">User:</label>
+                            <select id="sshUser">
+                                <option value="">All users</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="remoteAddr">Remote IP:</label>
+                            <select id="remoteAddr">
+                                <option value="">All IPs</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="command">Command (contains):</label>
+                            <input type="text" id="command" placeholder="e.g., ls, cat">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
+                    <button class="btn btn-secondary" id="clearFilters">Clear Filters</button>
+                </div>
+            </div>
         </div>
 
-        <div class="filters">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="logger">Logger:</label>
-                    <select id="logger">
-                        <option value="">Select a logger...</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="level">Level:</label>
-                    <select id="level">
-                        <option value="">All levels</option>
-                        <option value="INFO">INFO</option>
-                        <option value="ERROR">ERROR</option>
-                        <option value="DEBUG">DEBUG</option>
-                        <option value="WARN">WARN</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="messageSearch">Message (contains):</label>
-                    <input type="text" id="messageSearch" placeholder="Search in log messages">
-                </div>
-            </div>
-
-            <!-- HTTP Logger Filters -->
-            <div id="httpFilters" class="logger-specific-filters" style="display: none;">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="host">Host:</label>
-                        <select id="host">
-                            <option value="">All hosts</option>
-                        </select>
+        <div class="main-content">
+            <div class="logs-container">
+                <div class="logs-header">
+                    <div>
+                        <h1>Logs Explorer</h1>
+                        <div class="logs-count" id="logsCount">0 entries</div>
                     </div>
-                    <div class="filter-group">
-                        <label for="method">Method:</label>
-                        <select id="method">
-                            <option value="">All methods</option>
-                            <option value="GET">GET</option>
-                            <option value="POST">POST</option>
-                            <option value="PUT">PUT</option>
-                            <option value="DELETE">DELETE</option>
-                            <option value="PATCH">PATCH</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="path">Path (contains):</label>
-                        <input type="text" id="path" placeholder="e.g., /api/users">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="pagination-controls">
+                            <select id="pageSize"
+                                style="padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px;">
+                                <option value="25">Show 25</option>
+                                <option value="50" selected>Show 50</option>
+                                <option value="100">Show 100</option>
+                                <option value="200">Show 200</option>
+                                <option value="all">Show All</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="status">Status Code:</label>
-                        <select id="status">
-                            <option value="">All statuses</option>
-                            <option value="200">200 - OK</option>
-                            <option value="201">201 - Created</option>
-                            <option value="400">400 - Bad Request</option>
-                            <option value="401">401 - Unauthorized</option>
-                            <option value="403">403 - Forbidden</option>
-                            <option value="404">404 - Not Found</option>
-                            <option value="500">500 - Internal Server Error</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="ip">IP Address:</label>
-                        <input type="text" id="ip" placeholder="e.g., 192.168.1.1">
-                    </div>
-                    <div class="filter-group">
-                        <label for="minLatency">Min Latency (ms):</label>
-                        <input type="number" id="minLatency" placeholder="0">
+                <div class="logs-content" id="logsContent">
+                    <div class="empty-state">
+                        <h3>Select a logger to view logs</h3>
+                        <p>Choose a logger from the dropdown above to start viewing HTTP request logs.</p>
                     </div>
                 </div>
-            </div>
-
-            <!-- Console Logger Filters -->
-            <div id="consoleFilters" class="logger-specific-filters" style="display: none;">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="consoleApp">App:</label>
-                        <select id="consoleApp">
-                            <option value="">All apps</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="stream">Stream:</label>
-                        <select id="stream">
-                            <option value="">All streams</option>
-                            <option value="stdout">stdout</option>
-                            <option value="stderr">stderr</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cron Logger Filters -->
-            <div id="cronFilters" class="logger-specific-filters" style="display: none;">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="cronApp">App:</label>
-                        <select id="cronApp">
-                            <option value="">All apps</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SSH Logger Filters -->
-            <div id="sshFilters" class="logger-specific-filters" style="display: none;">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label for="sshUser">User:</label>
-                        <select id="sshUser">
-                            <option value="">All users</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="remoteAddr">Remote IP:</label>
-                        <select id="remoteAddr">
-                            <option value="">All IPs</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="command">Command (contains):</label>
-                        <input type="text" id="command" placeholder="e.g., ls, cat">
-                    </div>
-                </div>
-            </div>
-
-            <div class="filter-actions">
-                <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
-                <button class="btn btn-secondary" id="clearFilters">Clear Filters</button>
-            </div>
-        </div>
-
-        <div class="logs-container">
-            <div class="logs-header">
-                <h3>Request Logs</h3>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div class="logs-count" id="logsCount">0 entries</div>
-                    <div class="pagination-controls">
-                        <select id="pageSize"
-                            style="padding: 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px;">
-                            <option value="25">Show 25</option>
-                            <option value="50" selected>Show 50</option>
-                            <option value="100">Show 100</option>
-                            <option value="200">Show 200</option>
-                            <option value="all">Show All</option>
-                        </select>
-                        <button id="loadMore" class="btn btn-secondary"
-                            style="padding: 8px 16px; font-size: 12px; display: none;">
-                            Load More
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="logs-content" id="logsContent">
-                <div class="empty-state">
-                    <h3>Select a logger to view logs</h3>
-                    <p>Choose a logger from the dropdown above to start viewing HTTP request logs.</p>
+                <div class="logs-footer" id="logsFooter" style="display: none;">
+                    <button id="loadMore" class="btn btn-secondary"
+                        style="width: 100%; padding: 12px 16px; font-size: 14px;">
+                        Load More
+                    </button>
                 </div>
             </div>
         </div>
@@ -571,6 +748,7 @@
             async init() {
                 await this.loadLoggers();
                 this.setupEventListeners();
+                this.setupSidebarControls();
                 // Load filters from URL params after loggers are loaded
                 this.loadFiltersFromUrl();
             }
@@ -1038,7 +1216,7 @@
                         </div>
                     `;
                     countEl.textContent = '0 entries';
-                    document.getElementById('loadMore').style.display = 'none';
+                    document.getElementById('logsFooter').style.display = 'none';
                     return;
                 }
 
@@ -1050,7 +1228,7 @@
                     const logsHtml = sortedLogs.map(log => this.renderLogEntry(log)).join('');
                     container.innerHTML = logsHtml;
                     countEl.textContent = `${this.logs.length} entries`;
-                    document.getElementById('loadMore').style.display = 'none';
+                    document.getElementById('logsFooter').style.display = 'none';
                 } else {
                     // Calculate how many logs to show (currentPage * pageSize)
                     const logsToShow = Math.min(this.currentPage * this.pageSize, sortedLogs.length);
@@ -1063,14 +1241,15 @@
                     countEl.textContent = `${logsToShow} of ${this.logs.length} entries`;
 
                     // Show/hide load more button
+                    const logsFooter = document.getElementById('logsFooter');
                     const loadMoreBtn = document.getElementById('loadMore');
                     if (logsToShow < sortedLogs.length) {
-                        loadMoreBtn.style.display = 'inline-block';
+                        logsFooter.style.display = 'block';
                         const remaining = sortedLogs.length - logsToShow;
                         const nextPageSize = Math.min(this.pageSize, remaining);
                         loadMoreBtn.textContent = `Load ${nextPageSize} more logs`;
                     } else {
-                        loadMoreBtn.style.display = 'none';
+                        logsFooter.style.display = 'none';
                     }
                 }
             }
@@ -1317,6 +1496,7 @@
                     </div>
                 `;
                 document.getElementById('logsCount').textContent = '0 entries';
+                document.getElementById('logsFooter').style.display = 'none';
             }
 
             showLoading() {
@@ -1337,9 +1517,69 @@
                     </div>
                 `;
             }
+
+            setupSidebarControls() {
+                const sidebar = document.getElementById('sidebar');
+                const sidebarToggle = document.getElementById('sidebarToggle');
+                const resizeHandle = document.getElementById('resizeHandle');
+
+                // Toggle sidebar
+                sidebarToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('collapsed');
+
+                    // Save state to localStorage
+                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+                });
+
+                // Restore sidebar state
+                const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                if (isCollapsed) {
+                    sidebar.classList.add('collapsed');
+                }
+
+                // Sidebar resize functionality
+                let isResizing = false;
+                let startX = 0;
+                let startWidth = 0;
+
+                resizeHandle.addEventListener('mousedown', (e) => {
+                    isResizing = true;
+                    startX = e.clientX;
+                    startWidth = parseInt(document.defaultView.getComputedStyle(sidebar).width, 10);
+                    document.body.style.cursor = 'col-resize';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isResizing) return;
+
+                    const width = startWidth + e.clientX - startX;
+                    const minWidth = 300;
+                    const maxWidth = 600;
+
+                    if (width >= minWidth && width <= maxWidth) {
+                        sidebar.style.width = width + 'px';
+                        // Save width to localStorage
+                        localStorage.setItem('sidebarWidth', width);
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isResizing) {
+                        isResizing = false;
+                        document.body.style.cursor = '';
+                    }
+                });
+
+                // Restore sidebar width
+                const savedWidth = localStorage.getItem('sidebarWidth');
+                if (savedWidth) {
+                    sidebar.style.width = savedWidth + 'px';
+                }
+            }
         }
 
-        // Initialize the logs viewer when the page loads
+        // Initialize the logs explorer when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             new LogsViewer();
         });
